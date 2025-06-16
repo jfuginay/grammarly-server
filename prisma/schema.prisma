@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+}
+
+enum CheckType {
+  GRAMMAR
+  SPELLING
+  STYLE
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  subscriptionTier SubscriptionTier @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  documents     Document[]
+  usage         Usage[]
+}
+
+model Document {
+  id            String    @id @default(uuid())
+  userId        String
+  title         String
+  content       String
+  wordCount     Int
+  characterCount Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  grammarChecks GrammarCheck[]
+
+  @@index([userId])
+}
+
+model GrammarCheck {
+  id            String    @id @default(uuid())
+  documentId    String
+  originalText  String
+  suggestions   Json
+  checkType     CheckType
+  confidenceScore Float
+  createdAt     DateTime  @default(now())
+  document      Document  @relation(fields: [documentId], references: [id])
+
+  @@index([documentId])
+}
+
+model Usage {
+  id            String    @id @default(uuid())
+  userId        String
+  date          DateTime  @default(now())
+  checksPerformed Int
+  wordsProcessed Int
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, date])
+} 
